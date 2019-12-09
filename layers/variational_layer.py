@@ -31,7 +31,7 @@ class VariationalLayer(layers.Layer):
         # reparameterize z_mu, z_log_var
         z_0 = self.density(density_params)
         # compute forward flow
-        z_k, ldj = self.flow.forward(z_0, flow_params) if self.flow is not None else (z_0, 0.0)
+        z_k, ldj = self.flow.forward(z_0, flow_params) if self.flow is not None else (z_0, tf.constant(0.))
         # compute KL divergence
         kld = self.density.kld(z_0, z_k, ldj, density_params)
         self.add_loss(self.beta*kld)

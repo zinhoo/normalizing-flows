@@ -45,4 +45,4 @@ class Flow():
             yield z_k, ldj_k
 
     def param_count(self, d):
-        return sum([t.param_count(d) for t in self.transforms])
+        return int(sum([t.param_count(d) for t in self.transforms]))

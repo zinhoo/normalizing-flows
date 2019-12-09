@@ -1,4 +1,5 @@
 import tensorflow as tf
+import tensorflow.keras.backend as K
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Dense, Input, Lambda, Flatten, Reshape, Conv2D
 from tensorflow.keras.callbacks import LambdaCallback
@@ -21,8 +22,10 @@ class GatedConvVAE(tf.Module):
         self.encoder = self._create_encoder(img_wt, img_ht)
         self.decoder, self.variational_layer = self._create_decoder(img_wt, img_ht)
         beta_update = LambdaCallback(on_epoch_begin=lambda i,_: beta_update_fn(i, self.variational_layer.beta))
-        self.model = Model(inputs=self.encoder.inputs, outputs=self.decoder(self.encoder(self.encoder.inputs)))
-        self.model.compile(loss=loss, optimizer='adam', callbacks=[beta_update]+callbacks, metrics=metrics)
+        output, kld_val = self.decoder(self.encoder(self.encoder.inputs))
+        self.model = Model(inputs=self.encoder.inputs, outputs=output)
+        self.model.compile(loss=loss, optimizer='adam', callbacks=[beta_update]+callbacks,
+                           metrics=metrics)
 
     def fit(self, *args, **kwargs):
         return self.model.fit(*args, **kwargs)
@@ -70,4 +73,4 @@ class GatedConvVAE(tf.Module):
         h_conv = self._conv_upsample(self.hidden_units*2, h_k)
         x_out = self._conv_upsample(self.hidden_units, h_conv)
         output_0 = Conv2D(1, 1, activation=self.output_activation, padding='same')(x_out)
-        return Model(inputs=inputs, outputs=output_0), v_layer
+        return Model(inputs=inputs, outputs=[output_0, kld]), v_layer
